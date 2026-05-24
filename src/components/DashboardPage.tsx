@@ -9,10 +9,25 @@ import {
   FileText,
   Globe,
   Bot,
-  ArrowUpRight,
   Sparkles,
+  Search,
+  PenTool,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const stats = [
   {
@@ -93,26 +108,62 @@ const recentPapers = [
   },
 ];
 
+// Chart data
+const trendData = [
+  { year: "2017", sustainable: 120, ai: 50, nano: 80, natural: 60 },
+  { year: "2018", sustainable: 145, ai: 65, nano: 95, natural: 72 },
+  { year: "2019", sustainable: 178, ai: 90, nano: 115, natural: 88 },
+  { year: "2020", sustainable: 210, ai: 130, nano: 140, natural: 105 },
+  { year: "2021", sustainable: 260, ai: 180, nano: 170, natural: 128 },
+  { year: "2022", sustainable: 320, ai: 240, nano: 200, natural: 155 },
+  { year: "2023", sustainable: 390, ai: 310, nano: 240, natural: 185 },
+  { year: "2024", sustainable: 460, ai: 380, nano: 285, natural: 220 },
+  { year: "2025", sustainable: 520, ai: 450, nano: 330, natural: 260 },
+  { year: "2026", sustainable: 570, ai: 500, nano: 370, natural: 295 },
+];
+
+const countryData = [
+  { country: "China", papers: 380 },
+  { country: "India", papers: 120 },
+  { country: "USA", papers: 90 },
+  { country: "S. Korea", papers: 70 },
+  { country: "UK", papers: 50 },
+  { country: "Turkey", papers: 40 },
+  { country: "Australia", papers: 30 },
+  { country: "Pakistan", papers: 30 },
+];
+
+const topicDistribution = [
+  { name: "Sustainable", value: 35, color: "#10b981" },
+  { name: "AI/ML", value: 20, color: "#6366f1" },
+  { name: "Natural Dyes", value: 15, color: "#f59e0b" },
+  { name: "Nano", value: 12, color: "#ec4899" },
+  { name: "Smart Textiles", value: 10, color: "#3b82f6" },
+  { name: "Others", value: 8, color: "#94a3b8" },
+];
+
 export default function DashboardPage() {
   const { setCurrentPage } = useAppStore();
 
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-xl p-6 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
+        <div className="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-16" />
+        <div className="relative flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Sparkles size={24} />
               Welcome to TextileAI Research Assistant
             </h1>
             <p className="text-emerald-100 mt-1 text-sm">
-              Your AI-powered copilot for textile research and publication
+              Your AI-powered copilot for textile research and publication — BSc Textile Engineering Edition
             </p>
           </div>
-          <Bot size={48} className="text-emerald-200 opacity-60" />
+          <Bot size={48} className="text-emerald-200 opacity-60 hidden sm:block" />
         </div>
-        <div className="flex gap-3 mt-4">
+        <div className="flex flex-wrap gap-3 mt-4">
           <button
             onClick={() => setCurrentPage("topic-recommender")}
             className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
@@ -137,7 +188,7 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <Card key={s.label} className="border-0 shadow-sm">
+          <Card key={s.label} className="border-0 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4 flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-lg ${s.bg} ${s.color} flex items-center justify-center`}
@@ -147,49 +198,149 @@ export default function DashboardPage() {
               <div>
                 <p className="text-2xl font-bold text-slate-800">{s.value}</p>
                 <p className="text-xs text-slate-500">{s.label}</p>
-                <p className="text-xs text-emerald-600 font-medium">
-                  {s.change}
-                </p>
+                <p className="text-xs text-emerald-600 font-medium">{s.change}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Research Trend Chart */}
+        <Card className="border-0 shadow-sm lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp size={16} className="text-emerald-500" />
+              Research Trend Evolution (2017-2026)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Area type="monotone" dataKey="sustainable" name="Sustainable" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
+                  <Area type="monotone" dataKey="ai" name="AI/ML" stroke="#6366f1" fill="#6366f1" fillOpacity={0.1} />
+                  <Area type="monotone" dataKey="nano" name="Nano" stroke="#ec4899" fill="#ec4899" fillOpacity={0.1} />
+                  <Area type="monotone" dataKey="natural" name="Natural Dyes" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Topic Distribution Pie */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Topic Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={topicDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {topicDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-2 justify-center -mt-2">
+                {topicDistribution.map((t) => (
+                  <div key={t.name} className="flex items-center gap-1 text-[10px]">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                    <span className="text-slate-600">{t.name} ({t.value}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second Row: Country + Trending + Papers */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Country Bar Chart */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Globe size={16} className="text-blue-500" />
+              Country Research Output
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={countryData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                  <YAxis dataKey="country" type="category" tick={{ fontSize: 10 }} stroke="#94a3b8" width={60} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar dataKey="papers" fill="#10b981" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Trending Topics */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp size={16} className="text-emerald-500" />
-              Trending Research Topics (2024-2026)
+              Trending Topics
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
             {trendingTopics.map((t, i) => (
               <div
                 key={t.name}
                 className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-slate-400 w-5">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm font-medium text-slate-700">
-                    {t.name}
-                  </span>
+                  <span className="text-xs font-bold text-slate-400 w-5">{i + 1}</span>
+                  <span className="text-sm font-medium text-slate-700">{t.name}</span>
                   {t.hot && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-red-50 text-red-600 text-[10px] px-1.5"
-                    >
+                    <Badge variant="secondary" className="bg-red-50 text-red-600 text-[10px] px-1.5">
                       HOT
                     </Badge>
                   )}
                 </div>
-                <span className="text-xs font-bold text-emerald-600">
-                  {t.growth}
-                </span>
+                <span className="text-xs font-bold text-emerald-600">{t.growth}</span>
               </div>
             ))}
           </CardContent>
@@ -203,23 +354,15 @@ export default function DashboardPage() {
               Latest Key Papers
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
             {recentPapers.map((p) => (
-              <div
-                key={p.title}
-                className="py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <p className="text-sm font-medium text-slate-700 line-clamp-2">
-                  {p.title}
-                </p>
+              <div key={p.title} className="py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors">
+                <p className="text-sm font-medium text-slate-700 line-clamp-2">{p.title}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-slate-500">{p.journal}</span>
                   <span className="text-xs text-slate-400">|</span>
                   <span className="text-xs text-slate-500">{p.year}</span>
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] px-1.5 bg-emerald-50 text-emerald-700"
-                  >
+                  <Badge variant="secondary" className="text-[10px] px-1.5 bg-emerald-50 text-emerald-700">
                     {p.tag}
                   </Badge>
                 </div>
@@ -237,26 +380,10 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              {
-                label: "Search Papers",
-                icon: <Search size={20} />,
-                page: "research-monitor" as const,
-              },
-              {
-                label: "Find Gaps",
-                icon: <Lightbulb size={20} />,
-                page: "topic-recommender" as const,
-              },
-              {
-                label: "Write Abstract",
-                icon: <PenTool size={20} />,
-                page: "paper-writer" as const,
-              },
-              {
-                label: "Choose Journal",
-                icon: <BookOpen size={20} />,
-                page: "publication-guide" as const,
-              },
+              { label: "Search Papers", icon: <Search size={20} />, page: "research-monitor" as const },
+              { label: "Find Gaps", icon: <Lightbulb size={20} />, page: "topic-recommender" as const },
+              { label: "Write Abstract", icon: <PenTool size={20} />, page: "paper-writer" as const },
+              { label: "Choose Journal", icon: <BookOpen size={20} />, page: "publication-guide" as const },
             ].map((a) => (
               <button
                 key={a.label}
@@ -275,40 +402,5 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function Search({ size }: { size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
-
-function PenTool({ size }: { size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-    </svg>
   );
 }

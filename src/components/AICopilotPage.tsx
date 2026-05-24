@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+// Card components available if needed
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Send, User, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 const suggestedQuestions = [
@@ -17,10 +16,16 @@ const suggestedQuestions = [
   "Help me write an abstract for low liquor ratio salt-free dyeing research",
 ];
 
+let msgCounter = 0;
+function nextId(prefix: string) {
+  msgCounter++;
+  return `${prefix}-${msgCounter}`;
+}
+
 export default function AICopilotPage() {
   const { chatMessages, addChatMessage, clearChat } = useAppStore();
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,9 +36,9 @@ export default function AICopilotPage() {
 
   const handleSend = async (text?: string) => {
     const message = text || input.trim();
-    if (!message) return;
+    if (!message || isLoading) return;
 
-    const userMsgId = `user-${chatMessages.length + 1}`;
+    const userMsgId = nextId("user");
     const userTime = new Date().toLocaleTimeString();
     addChatMessage({
       id: userMsgId,
@@ -42,26 +47,35 @@ export default function AICopilotPage() {
       timestamp: userTime,
     });
     setInput("");
-    setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const defaultResponse =
-        "Based on my analysis of 1,247+ papers from 2024-2026, I can help you with that! Here are some key insights:\n\n**Research Context:** The textile wet processing field is rapidly evolving toward sustainability. The hottest topics right now are AI-optimized dyeing, salt-free cationization, and low liquor ratio processing.\n\n**My Recommendation:** For a BSc researcher, I strongly suggest focusing on the combination of low liquor ratio (LLR) dyeing with salt-free cationization and bio-mordants. This is a virtually unexplored intersection with ZERO published papers combining all three approaches.\n\n**Next Steps:**\n1. Start with a literature review of 30+ papers\n2. Design your cationization experiments (CHPTAC or Chitosan)\n3. Test at various liquor ratios (1:3, 1:5, 1:8, 1:10)\n4. Apply bio-mordants as auxiliary agents\n\nWould you like me to help you design the specific experimental protocol?";
-
-      const aiResponse =
-        `Great question about "${message.substring(0, 50)}..."\n\n${defaultResponse}`;
-
-      const aiMsgId = `ai-${chatMessages.length + 2}`;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      const aiMsgId = nextId("ai");
       const aiTime = new Date().toLocaleTimeString();
       addChatMessage({
         id: aiMsgId,
         role: "assistant",
-        content: aiResponse,
+        content: data.reply || "I couldn't generate a response. Please try again.",
         timestamp: aiTime,
       });
-      setIsTyping(false);
-    }, 2000);
+    } catch {
+      const aiMsgId = nextId("ai-err");
+      const aiTime = new Date().toLocaleTimeString();
+      addChatMessage({
+        id: aiMsgId,
+        role: "assistant",
+        content: "I encountered a connection error. Please check your internet and try again.",
+        timestamp: aiTime,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -73,7 +87,7 @@ export default function AICopilotPage() {
             AI Research Copilot
           </h2>
           <p className="text-sm text-slate-500">
-            Your intelligent textile research assistant
+            Powered by AI — your intelligent textile research assistant
           </p>
         </div>
         <Button
@@ -88,24 +102,29 @@ export default function AICopilotPage() {
 
       {/* Suggested Questions */}
       {chatMessages.length === 0 && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {suggestedQuestions.map((q) => (
-            <button
-              key={q}
-              onClick={() => handleSend(q)}
-              className="text-left text-xs p-3 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-slate-600"
-            >
-              <Sparkles size={12} className="text-emerald-500 mb-1" />
-              {q}
-            </button>
-          ))}
+        <div className="mb-4">
+          <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+            <Sparkles size={12} /> Try asking:
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {suggestedQuestions.map((q) => (
+              <button
+                key={q}
+                onClick={() => handleSend(q)}
+                disabled={isLoading}
+                className="text-left text-xs p-3 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-slate-600 disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Chat Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1"
+        className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1 custom-scrollbar"
       >
         {chatMessages.map((msg) => (
           <div
@@ -115,7 +134,7 @@ export default function AICopilotPage() {
             }`}
           >
             {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
                 <Bot size={14} className="text-emerald-600" />
               </div>
             )}
@@ -123,12 +142,12 @@ export default function AICopilotPage() {
               className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
                 msg.role === "user"
                   ? "bg-emerald-600 text-white"
-                  : "bg-slate-100 text-slate-800"
+                  : "bg-white border border-slate-200 text-slate-800 shadow-sm"
               }`}
             >
-              <div className="whitespace-pre-wrap">{msg.content}</div>
+              <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
               <p
-                className={`text-[10px] mt-1 ${
+                className={`text-[10px] mt-1.5 ${
                   msg.role === "user"
                     ? "text-emerald-200"
                     : "text-slate-400"
@@ -138,28 +157,21 @@ export default function AICopilotPage() {
               </p>
             </div>
             {msg.role === "user" && (
-              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-1">
                 <User size={14} className="text-blue-600" />
               </div>
             )}
           </div>
         ))}
-        {isTyping && (
+        {isLoading && (
           <div className="flex gap-2">
             <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
               <Bot size={14} className="text-emerald-600" />
             </div>
-            <div className="bg-slate-100 rounded-xl px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-                <span
-                  className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "0.1s" }}
-                />
-                <span
-                  className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                />
+            <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-emerald-600">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Thinking...</span>
               </div>
             </div>
           </div>
@@ -167,20 +179,21 @@ export default function AICopilotPage() {
       </div>
 
       {/* Input */}
-      <div className="flex gap-2 pt-2 border-t">
+      <div className="flex gap-2 pt-3 border-t bg-white">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
           placeholder="Ask anything about textile research..."
           className="flex-1"
+          disabled={isLoading}
         />
         <Button
           onClick={() => handleSend()}
-          disabled={!input.trim() || isTyping}
-          className="gap-2"
+          disabled={!input.trim() || isLoading}
+          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
         >
-          <Send size={14} />
+          {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           Send
         </Button>
       </div>

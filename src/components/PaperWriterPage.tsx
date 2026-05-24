@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// Badge available if needed
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -14,46 +14,80 @@ import {
   ChevronRight,
   Sparkles,
   Copy,
-  Download,
+  Loader2,
 } from "lucide-react";
 
 const paperSteps = [
-  { id: 1, name: "Title Generation", icon: <Sparkles size={16} /> },
-  { id: 2, name: "Abstract", icon: <FileText size={16} /> },
-  { id: 3, name: "Literature Review", icon: <FileText size={16} /> },
-  { id: 4, name: "Methodology", icon: <FileText size={16} /> },
-  { id: 5, name: "Results & Discussion", icon: <FileText size={16} /> },
-  { id: 6, name: "Conclusion", icon: <FileText size={16} /> },
-  { id: 7, name: "References", icon: <FileText size={16} /> },
-];
-
-const titleSuggestions = [
-  "Low Liquor Ratio Salt-Free Reactive Dyeing of Cationized Cotton Using Bio-Mordants: A Sustainable Approach",
-  "Sustainable Salt-Free Dyeing of Cotton at Reduced Liquor Ratios with Chitosan-Modified Bio-Mordant Systems",
-  "Eco-Friendly Low Water Reactive Dyeing: Combining Cationization and Bio-Mordanting for Sustainable Cotton Processing",
-  "Water-Efficient Salt-Free Dyeing of Bio-Mordant Modified Cotton: Process Optimization and Quality Assessment",
-  "Green Chemistry Approach to Low Liquor Ratio Salt-Free Dyeing: Cationization with Agricultural Waste Bio-Mordants",
+  { id: 1, name: "Title", key: "title", icon: <Sparkles size={16} /> },
+  { id: 2, name: "Abstract", key: "abstract", icon: <FileText size={16} /> },
+  { id: 3, name: "Lit Review", key: "litreview", icon: <FileText size={16} /> },
+  { id: 4, name: "Methodology", key: "methodology", icon: <FileText size={16} /> },
+  { id: 5, name: "Results", key: "results", icon: <FileText size={16} /> },
+  { id: 6, name: "Conclusion", key: "conclusion", icon: <FileText size={16} /> },
+  { id: 7, name: "References", key: "references", icon: <FileText size={16} /> },
 ];
 
 export default function PaperWriterPage() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [focusArea, setFocusArea] = useState("");
   const [title, setTitle] = useState("");
-  const [abstract, setAbstract] = useState("");
+  const [sections, setSections] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const handleGenerate = (type: string) => {
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleGenerate = async (type: string) => {
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/paper-writer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          context: focusArea || "Sustainable textile wet processing, low liquor ratio dyeing, salt-free cationization, bio-mordants",
+          title: title || "",
+        }),
+      });
+      const data = await res.json();
       if (type === "title" && !title) {
-        setTitle(titleSuggestions[0]);
+        // Parse titles from the response
+        const lines = data.content.split("\n").filter((l: string) => l.trim());
+        const firstTitle = lines[0].replace(/^\d+[\.\)]\s*/, "").trim();
+        setTitle(firstTitle);
+      } else {
+        setSections((prev) => ({ ...prev, [type]: data.content }));
       }
-      if (type === "abstract" && !abstract) {
-        setAbstract(
-          "This study investigates a novel sustainable approach combining low liquor ratio (LLR) dyeing with salt-free cationization and bio-mordanting for cotton fabric processing. Cotton fabric was cationized using chitosan and CHPTAC at various concentrations, then dyed with reactive dyes at liquor ratios of 1:3, 1:5, 1:8, and 1:10, utilizing pomegranate peel and myrobalan as bio-mordants. Results demonstrated that LLR salt-free dyeing at 1:5 ratio with chitosan cationization and pomegranate peel bio-mordant achieved comparable color strength (K/S = 12.4) to conventional 1:15 dyeing (K/S = 12.8), while reducing water consumption by 67% and eliminating salt usage entirely. Wash fastness ratings of 4-5 and rub fastness of 4 were maintained. Energy consumption was reduced by 58% at 1:5 liquor ratio compared to conventional processing. This combined approach represents a significant advancement toward truly sustainable textile wet processing, addressing multiple environmental concerns simultaneously."
-        );
-      }
+    } catch {
+      setSections((prev) => ({ ...prev, [type]: "Error generating content. Please try again." }));
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
+  };
+
+  const getStepDescription = (stepId: number) => {
+    switch (stepId) {
+      case 1:
+        return "Enter your research focus and let AI generate professional paper titles suitable for SCI/Scopus journals.";
+      case 2:
+        return "AI will write a structured abstract with Background, Objective, Methods, Key Results, and Conclusion.";
+      case 3:
+        return "AI generates a comprehensive literature review covering recent advances with specific citations.";
+      case 4:
+        return "AI writes a detailed methodology section with specific chemicals, procedures, and testing standards.";
+      case 5:
+        return "AI creates a structured results section with realistic data tables and discussion.";
+      case 6:
+        return "AI writes a concise conclusion with key findings and future research directions.";
+      case 7:
+        return "Format references in your target journal's required citation style.";
+      default:
+        return "";
+    }
   };
 
   return (
@@ -61,12 +95,30 @@ export default function PaperWriterPage() {
       <div>
         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <PenTool size={20} className="text-purple-500" />
-          Paper Writer
+          AI Paper Writer
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Step-by-step AI-assisted research paper writing
+          Step-by-step AI-assisted research paper writing — powered by real AI
         </p>
       </div>
+
+      {/* Research Focus Input */}
+      <Card className="border-0 shadow-sm bg-gradient-to-r from-purple-50 to-pink-50">
+        <CardContent className="p-4">
+          <label className="text-sm font-medium text-slate-700 mb-2 block">
+            Your Research Focus
+          </label>
+          <Input
+            value={focusArea}
+            onChange={(e) => setFocusArea(e.target.value)}
+            placeholder="e.g., Salt-free dyeing, Low liquor ratio, Bio-mordants, Cationization..."
+            className="bg-white"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            This helps AI generate more relevant content for each section of your paper.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Progress Steps */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2">
@@ -93,164 +145,173 @@ export default function PaperWriterPage() {
       </div>
 
       {/* Step Content */}
-      {currentStep === 1 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles size={16} className="text-amber-500" />
-              Step 1: Title Generation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">
-                Your Research Focus
-              </label>
-              <Input placeholder="e.g., Salt-free dyeing, Low liquor ratio, Bio-mordants..." />
-            </div>
-            <Button
-              onClick={() => handleGenerate("title")}
-              disabled={isGenerating}
-              className="gap-2"
-            >
-              <Sparkles size={14} />
-              {isGenerating ? "Generating..." : "Generate AI Title Suggestions"}
-            </Button>
-            {title && (
-              <div className="space-y-3 mt-4">
-                <h4 className="text-sm font-bold text-slate-700">
-                  AI-Generated Title:
-                </h4>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-slate-800">{title}</p>
-                  <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="gap-1">
-                      <Copy size={12} /> Copy
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            {paperSteps[currentStep - 1].icon}
+            Step {currentStep}: {paperSteps[currentStep - 1].name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-500">{getStepDescription(currentStep)}</p>
+
+          {currentStep === 1 && (
+            <>
+              <Button
+                onClick={() => handleGenerate("title")}
+                disabled={isGenerating}
+                className="gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {isGenerating ? "Generating Titles..." : "Generate AI Title Suggestions"}
+              </Button>
+              {title && (
+                <div className="space-y-3 mt-4">
+                  <h4 className="text-sm font-bold text-slate-700">AI-Generated Title:</h4>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-slate-800">{title}</p>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => handleCopy(title, "title")}
+                      >
+                        <Copy size={12} /> {copied === "title" ? "Copied!" : "Copy"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setCurrentStep(2)}
+                      >
+                        Use This Title <ChevronRight size={12} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {currentStep >= 2 && currentStep <= 6 && (
+            <>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">
+                  <strong>Your Title:</strong> {title || "Please generate a title first"}
+                </p>
+              </div>
+              <Button
+                onClick={() => handleGenerate(paperSteps[currentStep - 1].key)}
+                disabled={isGenerating || !title}
+                className="gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {isGenerating
+                  ? `Generating ${paperSteps[currentStep - 1].name}...`
+                  : `Generate AI ${paperSteps[currentStep - 1].name}`}
+              </Button>
+              {sections[paperSteps[currentStep - 1].key] && (
+                <div className="space-y-3">
+                  <Textarea
+                    value={sections[paperSteps[currentStep - 1].key]}
+                    onChange={(e) =>
+                      setSections((prev) => ({
+                        ...prev,
+                        [paperSteps[currentStep - 1].key]: e.target.value,
+                      }))
+                    }
+                    rows={14}
+                    className="text-sm font-mono"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() =>
+                        handleCopy(sections[paperSteps[currentStep - 1].key], paperSteps[currentStep - 1].key)
+                      }
+                    >
+                      <Copy size={12} /> {copied === paperSteps[currentStep - 1].key ? "Copied!" : "Copy"}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       className="gap-1"
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => handleGenerate(paperSteps[currentStep - 1].key)}
                     >
-                      Use This Title <ChevronRight size={12} />
+                      <Sparkles size={12} /> Regenerate
                     </Button>
+                    {currentStep < 7 && (
+                      <Button
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setCurrentStep(currentStep + 1)}
+                      >
+                        Next Step <ChevronRight size={12} />
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <h4 className="text-sm font-bold text-slate-700 mt-4">
-                  More Suggestions:
-                </h4>
-                {titleSuggestions.slice(1).map((t, i) => (
-                  <div
-                    key={i}
-                    className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 cursor-pointer transition-colors"
-                    onClick={() => setTitle(t)}
-                  >
-                    <p className="text-xs text-slate-700">{t}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {currentStep === 2 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText size={16} className="text-blue-500" />
-              Step 2: Abstract Writing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-700">
-                <strong>Your Title:</strong> {title || "Please generate a title first"}
-              </p>
-            </div>
-            <Button
-              onClick={() => handleGenerate("abstract")}
-              disabled={isGenerating || !title}
-              className="gap-2"
-            >
-              <Sparkles size={14} />
-              {isGenerating ? "Generating..." : "Generate AI Abstract"}
-            </Button>
-            {abstract && (
-              <div className="space-y-3">
-                <Textarea
-                  value={abstract}
-                  onChange={(e) => setAbstract(e.target.value)}
-                  rows={10}
-                  className="text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Copy size={12} /> Copy
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => setCurrentStep(3)}
-                  >
-                    Next: Literature Review <ChevronRight size={12} />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {currentStep >= 3 && currentStep <= 7 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">
-              Step {currentStep}: {paperSteps[currentStep - 1].name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm text-slate-600">
-                {currentStep === 3 &&
-                  "Write your literature review covering the key papers in your research area. Cover: (1) Sustainable dyeing approaches, (2) Cationization methods, (3) Bio-mordant applications, (4) Low liquor ratio innovations. Cite at least 30-40 recent papers (2019-2026)."}
-                {currentStep === 4 &&
-                  "Detail your experimental methods: Materials (cotton fabric, cationizing agents, reactive dyes, bio-mordants), Cationization procedure, Dyeing process at various liquor ratios, Testing methods (K/S, CIELab, wash/rub/light fastness, FTIR)."}
-                {currentStep === 5 &&
-                  "Present your results with tables and figures. Include K/S values at different LR, fastness ratings, CIELab coordinates, FTIR spectra analysis, and statistical analysis (ANOVA). Compare with conventional dyeing."}
-                {currentStep === 6 &&
-                  "Summarize key findings: optimal LLR for salt-free dyeing, bio-mordant effectiveness, water/energy savings. State practical implications for the textile industry. Suggest future research directions."}
-                {currentStep === 7 &&
-                  "Format references in the journal's required style (APA/GB-T 7714). Ensure all 30-50 citations are complete and verified. Use reference management tools like Zotero or Mendeley."}
-              </p>
-            </div>
-            <Textarea
-              placeholder={`Start writing your ${paperSteps[currentStep - 1].name} here...`}
-              rows={12}
-              className="text-sm"
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-1">
-                <Sparkles size={12} /> AI Assist
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Copy size={12} /> Copy
-              </Button>
-              {currentStep < 7 && (
-                <Button
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => setCurrentStep(currentStep + 1)}
-                >
-                  Next Step <ChevronRight size={12} />
-                </Button>
               )}
+            </>
+          )}
+
+          {currentStep === 7 && (
+            <div className="space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800">
+                  <strong>Reference Formatting Tips:</strong> Use your target journal&apos;s citation style (APA, GB-T 7714, Vancouver). Ensure all citations are complete with DOIs. Use reference managers like Zotero or Mendeley for accuracy.
+                </p>
+              </div>
+              <Textarea
+                placeholder="Paste or write your references here..."
+                rows={12}
+                className="text-sm font-mono"
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Sparkles size={12} /> AI Format References
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Paper Progress Summary */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Paper Completion Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-2">
+            {paperSteps.map((step) => {
+              const isComplete = step.id === 1 ? !!title : !!sections[step.key];
+              return (
+                <div
+                  key={step.id}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isComplete
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {isComplete ? "✓" : step.id}
+                  </div>
+                  <span className="text-[10px] text-slate-500 text-center">
+                    {step.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
