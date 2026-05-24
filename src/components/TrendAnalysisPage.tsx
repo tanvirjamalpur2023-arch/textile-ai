@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,23 +11,20 @@ import {
   AlertTriangle,
   Zap,
 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+const TrendLineChart = dynamic(
+  () => import("@/components/charts/TrendLineChart"),
+  { ssr: false }
+);
+const RadarChartComp = dynamic(
+  () => import("@/components/charts/RadarChartComp"),
+  { ssr: false }
+);
+const CountryBarChart = dynamic(
+  () => import("@/components/charts/CountryBarChart"),
+  { ssr: false }
+);
 
 const countryData = [
   { country: "China", pubs: 38, top50: 24, strength: "Volume leadership; smart textiles, dyeing, nano" },
@@ -58,42 +56,13 @@ const researchGaps = [
   { gap: "AI integration for SMEs", severity: "Medium", papers: "~6" },
 ];
 
-// Line chart data - multi-year trend
-const yearlyData = [
-  { year: "2017", ai: 50, circular: 40, smart: 60, sustainable: 120, nano: 80, waterless: 30 },
-  { year: "2018", ai: 65, circular: 55, smart: 75, sustainable: 145, nano: 95, waterless: 38 },
-  { year: "2019", ai: 90, circular: 75, smart: 95, sustainable: 178, nano: 115, waterless: 50 },
-  { year: "2020", ai: 130, circular: 110, smart: 130, sustainable: 210, nano: 140, waterless: 68 },
-  { year: "2021", ai: 180, circular: 155, smart: 175, sustainable: 260, nano: 170, waterless: 90 },
-  { year: "2022", ai: 240, circular: 210, smart: 230, sustainable: 320, nano: 200, waterless: 120 },
-  { year: "2023", ai: 310, circular: 280, smart: 290, sustainable: 390, nano: 240, waterless: 155 },
-  { year: "2024", ai: 380, circular: 350, smart: 350, sustainable: 460, nano: 285, waterless: 195 },
-  { year: "2025", ai: 450, circular: 420, smart: 410, sustainable: 520, nano: 330, waterless: 240 },
-  { year: "2026", ai: 500, circular: 470, smart: 460, sustainable: 570, nano: 370, waterless: 280 },
-];
-
-// Radar chart data - research opportunity
-const radarData = [
-  { subject: "Novelty", llr: 95, naturalDye: 75, ai: 85, nano: 70 },
-  { subject: "Feasibility", llr: 90, naturalDye: 95, ai: 70, nano: 60 },
-  { subject: "Demand", llr: 85, naturalDye: 80, ai: 90, nano: 75 },
-  { subject: "Low Competition", llr: 90, naturalDye: 60, ai: 75, nano: 65 },
-  { subject: "BSc Fit", llr: 92, naturalDye: 85, ai: 74, nano: 55 },
-  { subject: "Industry Need", llr: 88, naturalDye: 70, ai: 85, nano: 80 },
-];
-
-const barData = [
-  { name: "China", value: 380, fill: "#ef4444" },
-  { name: "India", value: 120, fill: "#f59e0b" },
-  { name: "USA", value: 90, fill: "#3b82f6" },
-  { name: "S. Korea", value: 70, fill: "#6366f1" },
-  { name: "UK", value: 50, fill: "#10b981" },
-  { name: "Turkey", value: 40, fill: "#ec4899" },
-  { name: "Australia", value: 30, fill: "#14b8a6" },
-  { name: "Pakistan", value: 30, fill: "#f97316" },
-];
-
 export default function TrendAnalysisPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -116,28 +85,13 @@ export default function TrendAnalysisPage() {
         </CardHeader>
         <CardContent>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={yearlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "11px" }} />
-                <Line type="monotone" dataKey="sustainable" name="Sustainable" stroke="#10b981" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="ai" name="AI/Industry 4.0" stroke="#6366f1" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="nano" name="Nano Finishing" stroke="#ec4899" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="smart" name="Smart Textiles" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="circular" name="Circular Economy" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="waterless" name="Waterless Dyeing" stroke="#14b8a6" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            {mounted ? (
+              <TrendLineChart />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-sm text-slate-400">Loading chart...</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -153,26 +107,13 @@ export default function TrendAnalysisPage() {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} stroke="#94a3b8" width={60} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="value" name="Publications" radius={[0, 4, 4, 0]}>
-                    {barData.map((entry, index) => (
-                      <rect key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {mounted ? (
+                <CountryBarChart />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-sm text-slate-400">Loading chart...</p>
+                </div>
+              )}
             </div>
             <div className="space-y-1 mt-2">
               {countryData.map((c) => (
@@ -195,17 +136,13 @@ export default function TrendAnalysisPage() {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
-                  <Radar name="LLR+Bio-Mordant" dataKey="llr" stroke="#10b981" fill="#10b981" fillOpacity={0.15} />
-                  <Radar name="Natural Dyes" dataKey="naturalDye" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                  <Radar name="AI/ML" dataKey="ai" stroke="#6366f1" fill="#6366f1" fillOpacity={0.1} />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                </RadarChart>
-              </ResponsiveContainer>
+              {mounted ? (
+                <RadarChartComp />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-sm text-slate-400">Loading chart...</p>
+                </div>
+              )}
             </div>
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2">
               <p className="text-xs text-emerald-800 font-medium flex items-center gap-1">

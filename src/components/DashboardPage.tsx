@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,20 +15,20 @@ import {
   PenTool,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+const RechartsArea = dynamic(
+  () => import("@/components/charts/AreaChartComp"),
+  { ssr: false }
+);
+const RechartsPie = dynamic(
+  () => import("@/components/charts/PieChartComp"),
+  { ssr: false }
+);
+const RechartsBar = dynamic(
+  () => import("@/components/charts/BarChartComp"),
+  { ssr: false }
+);
 
 const stats = [
   {
@@ -108,31 +109,6 @@ const recentPapers = [
   },
 ];
 
-// Chart data
-const trendData = [
-  { year: "2017", sustainable: 120, ai: 50, nano: 80, natural: 60 },
-  { year: "2018", sustainable: 145, ai: 65, nano: 95, natural: 72 },
-  { year: "2019", sustainable: 178, ai: 90, nano: 115, natural: 88 },
-  { year: "2020", sustainable: 210, ai: 130, nano: 140, natural: 105 },
-  { year: "2021", sustainable: 260, ai: 180, nano: 170, natural: 128 },
-  { year: "2022", sustainable: 320, ai: 240, nano: 200, natural: 155 },
-  { year: "2023", sustainable: 390, ai: 310, nano: 240, natural: 185 },
-  { year: "2024", sustainable: 460, ai: 380, nano: 285, natural: 220 },
-  { year: "2025", sustainable: 520, ai: 450, nano: 330, natural: 260 },
-  { year: "2026", sustainable: 570, ai: 500, nano: 370, natural: 295 },
-];
-
-const countryData = [
-  { country: "China", papers: 380 },
-  { country: "India", papers: 120 },
-  { country: "USA", papers: 90 },
-  { country: "S. Korea", papers: 70 },
-  { country: "UK", papers: 50 },
-  { country: "Turkey", papers: 40 },
-  { country: "Australia", papers: 30 },
-  { country: "Pakistan", papers: 30 },
-];
-
 const topicDistribution = [
   { name: "Sustainable", value: 35, color: "#10b981" },
   { name: "AI/ML", value: 20, color: "#6366f1" },
@@ -144,6 +120,11 @@ const topicDistribution = [
 
 export default function DashboardPage() {
   const { setCurrentPage } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -206,73 +187,33 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Research Trend Chart */}
-        <Card className="border-0 shadow-sm lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp size={16} className="text-emerald-500" />
-              Research Trend Evolution (2017-2026)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Area type="monotone" dataKey="sustainable" name="Sustainable" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
-                  <Area type="monotone" dataKey="ai" name="AI/ML" stroke="#6366f1" fill="#6366f1" fillOpacity={0.1} />
-                  <Area type="monotone" dataKey="nano" name="Nano" stroke="#ec4899" fill="#ec4899" fillOpacity={0.1} />
-                  <Area type="monotone" dataKey="natural" name="Natural Dyes" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {mounted && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Research Trend Chart */}
+          <Card className="border-0 shadow-sm lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp size={16} className="text-emerald-500" />
+                Research Trend Evolution (2017-2026)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <RechartsArea />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Topic Distribution Pie */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Topic Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={topicDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {topicDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-2 justify-center -mt-2">
+          {/* Topic Distribution Pie */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Topic Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <RechartsPie />
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center mt-2">
                 {topicDistribution.map((t) => (
                   <div key={t.name} className="flex items-center gap-1 text-[10px]">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
@@ -280,10 +221,25 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {!mounted && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-sm lg:col-span-2">
+            <CardContent className="h-64 flex items-center justify-center">
+              <p className="text-sm text-slate-400">Loading charts...</p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="h-64 flex items-center justify-center">
+              <p className="text-sm text-slate-400">Loading charts...</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Second Row: Country + Trending + Papers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -296,24 +252,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={countryData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                  <YAxis dataKey="country" type="category" tick={{ fontSize: 10 }} stroke="#94a3b8" width={60} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="papers" fill="#10b981" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {mounted ? (
+              <div className="h-56">
+                <RechartsBar />
+              </div>
+            ) : (
+              <div className="h-56 flex items-center justify-center">
+                <p className="text-sm text-slate-400">Loading chart...</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
