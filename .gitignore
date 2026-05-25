@@ -65,3 +65,5 @@ next-env.d.ts
 /TEXTILE_RESEARCH_REPORT.md
 /AGENTS.md
 /CLAUDE.md
+# GitHub CLI binary (not part of project)
+/gh
