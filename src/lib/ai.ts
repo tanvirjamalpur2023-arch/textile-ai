@@ -1,7 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-
 // Universal AI helper - works with z-ai-web-dev-sdk (container) or OpenAI API (Vercel)
-async function getAICompletion(messages: { role: string; content: string }[]) {
+
+type ChatRole = "system" | "user" | "assistant";
+
+interface ChatMessage {
+  role: ChatRole;
+  content: string;
+}
+
+async function getAICompletion(messages: ChatMessage[]) {
   // Try z-ai-web-dev-sdk first (container environment)
   try {
     const ZAI = (await import("z-ai-web-dev-sdk")).default;
@@ -50,3 +56,4 @@ async function webSearch(query: string, num: number = 10) {
 }
 
 export { getAICompletion, webSearch };
+export type { ChatMessage, ChatRole };
