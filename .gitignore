@@ -32,6 +32,29 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# container specific
+/dev.log
+/server.log
+/server-persistent.log
+/mini-next.log
+/keep-alive.sh
+/run-server.sh
+/next-pid.txt
+/worklog.md
+/download/
+/upload/
+/skills/
+/TEXTILE_RESEARCH_REPORT.md
+/AGENTS.md
+/CLAUDE.md
+/mini-services/
+/.zscripts/
+/db/
+/Caddyfile
+/start.sh
+/README.md
 
 # vercel
 .vercel
