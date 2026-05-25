@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -30,15 +28,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env*.local
 !.env.example
 
-# container specific
+# logs
 /dev.log
 /server.log
 /server-persistent.log
 /mini-next.log
+
+# container specific files
 /keep-alive.sh
 /run-server.sh
 /next-pid.txt
@@ -46,15 +48,11 @@ yarn-error.log*
 /download/
 /upload/
 /skills/
-/TEXTILE_RESEARCH_REPORT.md
-/AGENTS.md
-/CLAUDE.md
 /mini-services/
 /.zscripts/
 /db/
 /Caddyfile
 /start.sh
-/README.md
 
 # vercel
 .vercel
@@ -62,3 +60,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# legacy files
+/TEXTILE_RESEARCH_REPORT.md
+/AGENTS.md
+/CLAUDE.md

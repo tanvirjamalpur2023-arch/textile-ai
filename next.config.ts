@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Vercel handles this automatically, but useful for Docker/standalone deploys
+  // output: "standalone",
 };
 
 export default nextConfig;
